@@ -8,7 +8,7 @@
 
 自架的 HTTP API，為多位使用者儲存並提供 tradingagents agent 外掛的紀錄（分析執行、判定、追蹤、結算與觀察清單）。分析本身留在外掛中；這個伺服器只負責保存資料。
 
-API 的設計在 [DESIGN.md](DESIGN.md)，尚未實作。目前服務只在 `/healthz` 回應健康檢查。
+API 的設計在 [DESIGN.md](https://github.com/Mai0313/td_plugin_api/blob/main/DESIGN.md)，尚未實作。目前服務只在 `/healthz` 回應健康檢查。
 
 其他語言: [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md)
 

@@ -8,7 +8,7 @@
 
 自托管的 HTTP API，为多位用户存储并提供 tradingagents agent 插件的记录（分析运行、判定、跟进、结算与观察列表）。分析本身留在插件中；这个服务器只负责保存数据。
 
-API 的设计在 [DESIGN.md](DESIGN.md)，尚未实现。目前服务只在 `/healthz` 响应健康检查。
+API 的设计在 [DESIGN.md](https://github.com/Mai0313/td_plugin_api/blob/main/DESIGN.md)，尚未实现。目前服务只在 `/healthz` 响应健康检查。
 
 其他语言: [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md)
 

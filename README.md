@@ -8,7 +8,7 @@
 
 A self-hosted HTTP API that stores and serves the records of the tradingagents agent plugin (analysis runs, rulings, follow-ups, settlements and watchlists) for several users. The analysis itself stays in the plugin; this server only keeps the data.
 
-The API is designed in [DESIGN.md](DESIGN.md) but not built yet. For now the service only answers a health check at `/healthz`.
+The API is designed in [DESIGN.md](https://github.com/Mai0313/td_plugin_api/blob/main/DESIGN.md) but not built yet. For now the service only answers a health check at `/healthz`.
 
 Other Languages: [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md)
 
