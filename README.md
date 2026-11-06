@@ -8,18 +8,28 @@
 
 A self-hosted HTTP API that stores and serves the records of the tradingagents agent plugin (analysis runs, rulings, follow-ups, settlements and watchlists) for several users. The analysis itself stays in the plugin; this server only keeps the data.
 
-The API is designed in [DESIGN.md](https://github.com/Mai0313/td_plugin_api/blob/main/DESIGN.md) but not built yet. For now the service only answers a health check at `/healthz`.
+[DESIGN.md](https://github.com/Mai0313/td_plugin_api/blob/main/DESIGN.md) describes every endpoint, and the running server serves its generated reference at `/docs`.
 
 Other Languages: [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md)
 
 ## 🚀 Quick Start
 
-With Docker Compose, which publishes the API on `127.0.0.1:8700` (set `TD_PLUGIN_API_PORT` in `.env` to change it):
+With Docker Compose, which runs PostgreSQL beside the API and publishes the API on `127.0.0.1:8700` (set `TD_PLUGIN_API_PORT` in `.env` to change it). Set `POSTGRES_PASSWORD` in `.env` first (see `.env.example`):
 
 ```bash
 docker compose up -d --build
 curl http://127.0.0.1:8700/healthz
 ```
+
+There is no sign-up. Create a user, then a token for each machine or reader; the token is printed once:
+
+```bash
+docker compose exec app uv run td_plugin_api admin create-user wei --role owner
+docker compose exec app uv run td_plugin_api admin create-token wei --name desk --machine 59a937828f3c
+curl -H "Authorization: Bearer <token>" http://127.0.0.1:8700/v1/me
+```
+
+Add `--scopes read` for a reader that only reads, and `admin revoke-token <id>` stops a token.
 
 Or directly with [uv](https://docs.astral.sh/uv/):
 
@@ -28,7 +38,7 @@ uv sync
 uv run td_plugin_api
 ```
 
-The server listens on `127.0.0.1:8700` unless `TD_PLUGIN_API_HOST` or `TD_PLUGIN_API_PORT` says otherwise.
+The server listens on `127.0.0.1:8700` unless `TD_PLUGIN_API_HOST` or `TD_PLUGIN_API_PORT` says otherwise, and keeps its data in a SQLite file under `data/` unless `TD_PLUGIN_API_DATABASE_URL` names another database.
 
 ## 🤝 Contributing
 
