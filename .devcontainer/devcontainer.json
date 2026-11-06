@@ -1,0 +1,46 @@
+{
+  "image": "python:3.12-slim",
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "username": "vscode",
+      "configureZshAsDefaultShell": true
+    },
+    "ghcr.io/devcontainers-extra/features/uv:1": {}
+  },
+  "remoteUser": "vscode",
+  "updateContentCommand": "uv sync && uv cache clean",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "cweijan.dbclient-jdbc",
+        "cweijan.vscode-redis-client",
+        "eamodio.gitlens",
+        "github.copilot-chat",
+        "kevinrose.vsc-python-indent",
+        "ms-azuretools.vscode-containers",
+        "ms-azuretools.vscode-docker",
+        "ms-python.debugpy",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.vscode-python-envs",
+        "natqe.reload",
+        "oderwat.indent-rainbow",
+        "redhat.vscode-yaml",
+        "smcpeak.default-keys-windows",
+        "tamasfe.even-better-toml"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "terminal.integrated.profiles.linux": {
+          "bash": {
+            "path": "bash",
+            "icon": "terminal-bash"
+          },
+          "zsh": {
+            "path": "zsh"
+          }
+        }
+      }
+    }
+  }
+}
