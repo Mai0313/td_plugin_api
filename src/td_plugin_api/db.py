@@ -5,7 +5,9 @@ from typing import Any, ClassVar
 from pathlib import Path
 from datetime import UTC, datetime
 
+from alembic import command
 from sqlalchemy import JSON, Text, Index, String, ForeignKey, LargeBinary, create_engine
+from alembic.config import Config
 from sqlalchemy.orm import Mapped, Session, DeclarativeBase, sessionmaker, mapped_column
 from sqlalchemy.engine import Engine, make_url
 from sqlalchemy.dialects.postgresql import JSONB
@@ -225,7 +227,7 @@ class Change(Base):
 
 
 def open_database(url: str) -> tuple[Engine, sessionmaker[Session]]:
-    """Connect to the database at `url`, creating its tables, and its folder for a SQLite file."""
+    """Connect to the database at `url`, migrating its tables, and creating its folder for a SQLite file."""
     options: dict[str, Any] = {}
     parsed = make_url(url)
     if parsed.get_backend_name() == "sqlite":
@@ -234,5 +236,14 @@ def open_database(url: str) -> tuple[Engine, sessionmaker[Session]]:
         if parsed.database and parsed.database != ":memory:":
             Path(parsed.database).parent.mkdir(parents=True, exist_ok=True)
     engine = create_engine(url, **options)
-    Base.metadata.create_all(engine)
+    migrate(engine)
     return engine, sessionmaker(engine, expire_on_commit=False)
+
+
+def migrate(engine: Engine) -> None:
+    """Bring the database's tables up to the newest migration."""
+    config = Config()
+    config.set_main_option("script_location", str(Path(__file__).parent / "migrations"))
+    with engine.begin() as connection:
+        config.attributes["connection"] = connection
+        command.upgrade(config, "head")

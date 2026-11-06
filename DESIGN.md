@@ -223,6 +223,8 @@ A reader sees only the changes to records it may read, plus the delete of a publ
 
 PostgreSQL beside the app in Docker Compose: payloads as `jsonb`, and artifact and tool-output bodies in one table keyed by SHA-256. The bodies can move to files or object storage later without changing the API.
 
+The tables are versioned with Alembic migrations in `src/td_plugin_api/migrations/`, and the server brings its database up to the newest migration at startup, so a new column reaches a running database without a hand edit.
+
 ## Reserved for later
 
 Designed now so the paths stay free, and not built in v1:
