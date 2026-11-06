@@ -91,7 +91,7 @@ Add dependencies with `uv add <pkg>`, or `uv add --dev <pkg>` for development-on
 
 ## Local Services
 
-`docker-compose.yaml` defines the `app` service, which runs the API on a loopback-only port. Copy `.env.example` to `.env` to change the port, then build and start it:
+`docker-compose.yaml` defines the `app` service, which runs the API on a loopback-only port, and the `postgresql` service it stores data in, whose files live under `data/postgresql`. Copy `.env.example` to `.env`, set `POSTGRES_PASSWORD` (and the port, if needed), then build and start them:
 
 ```bash
 docker compose up -d --build
