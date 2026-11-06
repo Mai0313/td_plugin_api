@@ -10,6 +10,7 @@ Thank you for your interest in contributing to this Python project. This documen
 - [Development Setup](#development-setup)
 - [Local Workflow](#local-workflow)
 - [Local Services](#local-services)
+- [Database Changes](#database-changes)
 - [Testing](#testing)
 - [Documentation](#documentation)
 - [Branching Model](#branching-model)
@@ -91,11 +92,23 @@ Add dependencies with `uv add <pkg>`, or `uv add --dev <pkg>` for development-on
 
 ## Local Services
 
-`docker-compose.yaml` defines the `app` service, which runs the API on a loopback-only port. Copy `.env.example` to `.env` to change the port, then build and start it:
+`docker-compose.yaml` defines the `app` service, which runs the API on a loopback-only port, and the `postgresql` service it stores data in, whose files live under `data/postgresql`. Copy `.env.example` to `.env`, set `POSTGRES_PASSWORD` (and the port, if needed), then build and start them:
 
 ```bash
 docker compose up -d --build
 ```
+
+## Database Changes
+
+The server applies the migrations in `src/td_plugin_api/migrations/versions/` at startup. A change to the tables in `src/td_plugin_api/db.py` needs a migration of its own, which Alembic writes by comparing the models with a database on the newest migration:
+
+```bash
+export TD_PLUGIN_API_DATABASE_URL=sqlite:///data/dev.db
+uv run alembic upgrade head
+uv run alembic revision --autogenerate -m "<what changes>"
+```
+
+Read the generated file before committing it. Until it exists, `test_the_migrations_build_the_tables_the_models_describe` fails.
 
 ## Testing
 

@@ -67,8 +67,11 @@ authors = [
     { name = "Wei", email = "mai@mai0313.com" },
 ]
 dependencies = [
+    "alembic>=1.20.1",
     "fastapi>=0.162.0",
+    "psycopg[binary]>=3.3.8",
     "pydantic",
+    "sqlalchemy>=2",
     "uvicorn>=0.54.0",
 ]
 readme = "README.md"

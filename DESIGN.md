@@ -17,14 +17,14 @@ The tradingagents plugin runs analyses on its users' machines and records the fa
 - JSON in and out, except artifact and tool-output bodies, which are sent and served as they are.
 - Times are UTC ISO 8601 (`2026-11-05T17:04:50Z`); dates are `YYYY-MM-DD` in the stock's market.
 - IDs are UUIDv7 strings made by the client, except a machine's, which is the 12-character ID the plugin already keeps in `.machine-id`.
-- `Authorization: Bearer <token>` on every request but `/healthz`.
-- Lists take `limit` and `cursor` and return `next_cursor`, null on the last page.
+- `Authorization: Bearer <token>` on every request but `/healthz` and the API's own generated docs (`/docs`, `/redoc`, `/openapi.json`), which describe only its shape.
+- Lists return `{"items": [...], "next_cursor": ...}`; they take `limit` and `cursor`, and `next_cursor` is null on the last page.
 - Errors are `{"error": {"code": "...", "message": "..."}}`: 401 for a missing or bad token, 403 for a record that is not yours or a missing scope, 404 for one that does not exist or is not visible to you, 409 for a different body sent for a record that cannot change, 422 for a malformed body.
 - A `PUT` whose body matches what is stored returns 200 and records no change.
 
 ## Users, tokens and machines
 
-There is no sign-up: the owner creates users and tokens with a command on the server (`td_plugin_api admin ...`).
+There is no sign-up: the owner creates users and tokens with commands on the server: `td_plugin_api admin create-user`, `create-token` (prints the token's ID and the token, once) and `revoke-token`.
 
 - **User**: `id`, `handle`, `display_name`, `role` (`owner` or `member`), `created_at`.
 - **Token**: belongs to a user and optionally to one of their machines; `name`, `scopes` (`read`, `write`), `created_at`, `last_used_at`, `revoked_at`. It is shown once, as `tdp_` followed by random characters, and the server keeps only its hash. Each machine gets its own token so one can be revoked alone, and a read-only consumer gets a `read` token.
@@ -61,6 +61,7 @@ A run is one analysis, whether or not it reached a ruling. Columns: `id`, `slug`
 - `visibility` defaults to `public`; a run with `has_holding` true is private whatever `visibility` says (see [Visibility](#visibility)).
 - `language` is the language the run's files are written in. A run sent without one is stored as `Traditional Chinese`.
 - `model` is the model that chaired the run.
+- `machine` defaults to the machine of the token that created the run.
 
 | Method | Path            | What it does                                                                     |
 | ------ | --------------- | -------------------------------------------------------------------------------- |
@@ -73,11 +74,11 @@ A run is one analysis, whether or not it reached a ruling. Columns: `id`, `slug`
 
 A file the run wrote, at its path inside the run folder. Columns: `path`, `content_type`, `sha256`, `size`, `role` and `model` (who wrote it, when known), `updated_at`. Bodies are stored once per content hash, so the same text sent twice takes no extra space.
 
-| Method | Path                             | What it does         |
-| ------ | -------------------------------- | -------------------- |
-| PUT    | `/v1/runs/{id}/artifacts/{path}` | the body is the file |
-| GET    | `/v1/runs/{id}/artifacts`        | the list             |
-| GET    | `/v1/runs/{id}/artifacts/{path}` | the file             |
+| Method | Path                             | What it does                                                                              |
+| ------ | -------------------------------- | ----------------------------------------------------------------------------------------- |
+| PUT    | `/v1/runs/{id}/artifacts/{path}` | the body is the file, its type the `Content-Type`; `role` and `model` as query parameters |
+| GET    | `/v1/runs/{id}/artifacts`        | the list                                                                                  |
+| GET    | `/v1/runs/{id}/artifacts/{path}` | the file                                                                                  |
 
 ### Calls
 
@@ -142,7 +143,7 @@ One row per user and ticker: `watched`, `follow`, `holding` (free text), `update
 
 ### Start-overs
 
-`PUT /v1/me/start-overs/{id}` with `{"at": ...}` records the moment a user started their record over. Reads of that user's calls then leave out the ones ruled before their latest start-over, unless asked for with `all=true`. Nothing is deleted.
+`PUT /v1/me/start-overs/{id}` with `{"at": ...}` records the moment a user started their record over. Reads of that user's calls then leave out the ones ruled before their latest start-over, unless asked for with `all=true`. Nothing is deleted. `GET /v1/me/start-overs` lists them.
 
 ## Reading calls
 
@@ -152,7 +153,7 @@ A reader that only wants the AI's calls, such as the Discord bot, should not hav
 | ------ | ---------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | GET    | `/v1/calls`                  | filter by `ticker`, `user`, `model`, `status` (`open` or `settled`), `since` (ruled at or after); newest first |
 | GET    | `/v1/calls/{id}`             | one call                                                                                                       |
-| GET    | `/v1/tickers/{ticker}/calls` | a ticker's calls, newest first; `latest=true` keeps only the newest, one per `model` when given                |
+| GET    | `/v1/tickers/{ticker}/calls` | a ticker's calls, newest first; `latest=true` keeps only the newest (of the given `model`, when one is given)  |
 
 A call is `settled` once its settlement is stored and `open` before. `include=key_points,invalidation,followups,standings` adds those lists; long texts stay behind `links`. With made-up values:
 
@@ -203,12 +204,12 @@ A call is `settled` once its settlement is stored and `open` before. `include=ke
 
 ## Changes and events
 
-Every write that changes something takes the next number in one sequence, and clients follow it in two ways:
+Every write that changes something takes the next number in one sequence, handed out in commit order, and clients follow it in two ways:
 
-- `GET /v1/changes?after=<seq>`: what changed after a number, oldest first, each entry `{seq, at, kind, run, ref, op}`. A client that was offline catches up from the last number it saw.
+- `GET /v1/changes?after=<seq>`: what changed after a number, oldest first, each entry `{seq, at, kind, run, ref, op}`, narrowed by `types=` and paged by `limit`, with `next_cursor` as the next page's `after`. A client that was offline catches up from the last number it saw.
 - `GET /v1/events`: the same entries as server-sent events as they happen, with `seq` as the event ID, so a dropped connection resumes from `Last-Event-ID` without missing any. `types=` narrows it, such as `types=ruling,followup,standing,settlement` for a bot that posts new calls, or `types=job` for one that shows what is being processed. A comment line goes out every 30 seconds so proxies keep the connection open.
 
-A reader sees only the changes to records it may read.
+A reader sees only the changes to records it may read, plus the delete of a public run, so a reader that copied the run drops it.
 
 ## Visibility
 
@@ -221,6 +222,8 @@ A reader sees only the changes to records it may read.
 ## Storage
 
 PostgreSQL beside the app in Docker Compose: payloads as `jsonb`, and artifact and tool-output bodies in one table keyed by SHA-256. The bodies can move to files or object storage later without changing the API.
+
+The tables are versioned with Alembic migrations in `src/td_plugin_api/migrations/`, and the server brings its database up to the newest migration at startup, so a new column reaches a running database without a hand edit.
 
 ## Reserved for later
 

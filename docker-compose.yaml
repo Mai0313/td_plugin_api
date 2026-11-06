@@ -4,6 +4,29 @@ services:
       context: .
       dockerfile: ./docker/Dockerfile
       target: prod
+    environment:
+      TD_PLUGIN_API_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-td_plugin_api}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgresql:5432/${POSTGRES_DB:-td_plugin_api}
     ports:
       - 127.0.0.1:${TD_PLUGIN_API_PORT:-8700}:8700
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    restart: always
+
+  postgresql:
+    # The major version is pinned because its data folder only opens on the same major; moving up needs pg_upgrade.
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-td_plugin_api}
+      POSTGRES_USER: ${POSTGRES_USER:-td_plugin_api}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      PGDATA: /var/lib/postgresql/data
+    healthcheck:
+      test: pg_isready -U ${POSTGRES_USER:-td_plugin_api} -d ${POSTGRES_DB:-td_plugin_api}
+      start_period: 10s
+      timeout: 1s
+      retries: 5
+      interval: 5s
+    volumes:
+      - ./data/postgresql:/var/lib/postgresql/data
     restart: always
